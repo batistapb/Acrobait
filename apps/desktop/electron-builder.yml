@@ -1,11 +1,19 @@
 appId: com.acrobait.app
 productName: Acrobait
+# electron-builder names the packaged binary after package.json's "name"
+# ("desktop") unless told otherwise. On Linux, Electron derives WM_CLASS from
+# that binary's own filename, so without this override the taskbar/dock can
+# never match the running window to acrobait.desktop's icon.
+executableName: Acrobait
 directories:
   output: release
   buildResources: build
 files:
   - out/**/*
   - package.json
+extraResources:
+  - from: build/icon.png
+    to: icon.png
 linux:
   target:
     - AppImage

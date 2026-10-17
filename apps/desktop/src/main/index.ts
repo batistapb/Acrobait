@@ -4,6 +4,16 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const PDF_FILTER = [{ name: "PDF", extensions: ["pdf"] }];
 
+// Electron derives the Linux window class (WM_CLASS) from the app name, which
+// otherwise defaults to the npm package name ("desktop") — that mismatch is
+// why the taskbar/dock couldn't match the running window to our .desktop
+// entry's icon and fell back to a generic one. Must run before whenReady().
+app.setName("Acrobait");
+
+const iconPath = app.isPackaged
+  ? join(process.resourcesPath, "icon.png")
+  : join(__dirname, "../../build/icon.png");
+
 function createWindow(): void {
   const win = new BrowserWindow({
     width: 1280,
@@ -12,6 +22,7 @@ function createWindow(): void {
     minHeight: 480,
     backgroundColor: "#1c2128",
     autoHideMenuBar: true,
+    icon: iconPath,
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       sandbox: false,
