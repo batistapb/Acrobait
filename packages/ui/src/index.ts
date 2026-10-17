@@ -2,3 +2,6 @@ export { FileSystemProvider, useFileSystem } from "./context/FileSystemContext.j
 export { PdfCanvasViewer } from "./viewer/PdfCanvasViewer.js";
 export { ThumbnailSidebar } from "./viewer/ThumbnailSidebar.js";
 export { ZoomControls } from "./viewer/ZoomControls.js";
+export { AnnotationLayer } from "./annotation/AnnotationLayer.js";
+export { AnnotationToolbar } from "./annotation/AnnotationToolbar.js";
+export { SignaturePad } from "./annotation/SignaturePad.js";

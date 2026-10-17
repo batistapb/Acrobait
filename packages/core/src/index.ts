@@ -8,3 +8,13 @@ export {
   renderPageToCanvas,
 } from "./engine/renderEngine.js";
 export type { PdfDocumentHandle, PageSize } from "./engine/renderEngine.js";
+export { bakeAnnotations } from "./annotations/bake.js";
+export type {
+  Annotation,
+  AnnotationTool,
+  Point,
+  HighlightAnnotation,
+  FreehandAnnotation,
+  CommentAnnotation,
+  SignatureAnnotation,
+} from "./annotations/types.js";
