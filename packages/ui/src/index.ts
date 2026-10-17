@@ -5,3 +5,4 @@ export { ZoomControls } from "./viewer/ZoomControls.js";
 export { AnnotationLayer } from "./annotation/AnnotationLayer.js";
 export { AnnotationToolbar } from "./annotation/AnnotationToolbar.js";
 export { SignaturePad } from "./annotation/SignaturePad.js";
+export { PageOrganizerGrid } from "./pageOrganizer/PageOrganizerGrid.js";

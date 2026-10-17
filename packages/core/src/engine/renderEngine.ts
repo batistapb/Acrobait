@@ -23,7 +23,10 @@ export async function loadDocument(bytes: Uint8Array): Promise<PdfDocumentHandle
   if (!workerConfigured) {
     throw new Error("PDF worker not configured. Call configureWorker() once at app startup.");
   }
-  const proxy = await pdfjsLib.getDocument({ data: bytes }).promise;
+  // pdf.js transfers the underlying ArrayBuffer to its worker, detaching it on the
+  // main thread. Pass a copy so callers can safely keep using their original bytes
+  // afterward (e.g. for pdf-lib operations on the same document).
+  const proxy = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
   return { proxy, pageCount: proxy.numPages };
 }
 

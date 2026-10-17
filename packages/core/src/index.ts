@@ -18,3 +18,8 @@ export type {
   CommentAnnotation,
   SignatureAnnotation,
 } from "./annotations/types.js";
+export { applyPageOrganization, createInitialPageDrafts } from "./pageOps/apply.js";
+export { mergeDocuments } from "./pageOps/merge.js";
+export { splitDocument } from "./pageOps/split.js";
+export type { PageDraft } from "./pageOps/types.js";
+export type { SplitResult } from "./pageOps/split.js";

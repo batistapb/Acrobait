@@ -9,18 +9,26 @@ import {
   AnnotationLayer,
   AnnotationToolbar,
   SignaturePad,
+  PageOrganizerGrid,
 } from "@acrobait/ui";
 import {
   configureWorker,
   loadDocument,
   bakeAnnotations,
+  applyPageOrganization,
+  createInitialPageDrafts,
+  mergeDocuments,
+  splitDocument,
   type PdfDocumentHandle,
   type Annotation,
   type AnnotationTool,
+  type PageDraft,
 } from "@acrobait/core";
 import { WebFileSystemAdapter } from "./adapters/WebFileSystemAdapter.js";
 
 configureWorker(pdfWorkerUrl);
+
+type Mode = "view" | "organize";
 
 function Viewer() {
   const fs = useFileSystem();
@@ -31,6 +39,7 @@ function Viewer() {
   const [pageIndex, setPageIndex] = useState(0);
   const [scale, setScale] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>("view");
 
   const [tool, setTool] = useState<AnnotationTool>("select");
   const [color, setColor] = useState("#ffd400");
@@ -38,17 +47,26 @@ function Viewer() {
   const [pendingSignature, setPendingSignature] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [pageDrafts, setPageDrafts] = useState<PageDraft[]>([]);
+  const [splitAt, setSplitAt] = useState(1);
+
+  async function loadIntoState(bytes: Uint8Array, name: string, newFileHandle: unknown) {
+    const doc = await loadDocument(bytes);
+    setHandle(doc);
+    setOriginalBytes(bytes);
+    setFileHandle(newFileHandle);
+    setDocumentName(name);
+    setPageIndex(0);
+    setAnnotations([]);
+    setPageDrafts(createInitialPageDrafts(doc.pageCount));
+    setSplitAt(1);
+  }
+
   async function handleOpen() {
     setError(null);
     try {
       const opened = await fs.openDocument();
-      const doc = await loadDocument(opened.bytes);
-      setHandle(doc);
-      setOriginalBytes(opened.bytes);
-      setFileHandle(opened.handle);
-      setDocumentName(opened.name);
-      setPageIndex(0);
-      setAnnotations([]);
+      await loadIntoState(opened.bytes, opened.name, opened.handle);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao abrir o PDF");
     }
@@ -76,6 +94,48 @@ function Viewer() {
     }
   }
 
+  async function handleApplyOrganization() {
+    if (!originalBytes || !documentName) return;
+    setError(null);
+    try {
+      const newBytes = await applyPageOrganization(originalBytes, pageDrafts);
+      await loadIntoState(newBytes, documentName, fileHandle);
+      setMode("view");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao aplicar as alterações");
+    }
+  }
+
+  function handleCancelOrganization() {
+    if (handle) setPageDrafts(createInitialPageDrafts(handle.pageCount));
+    setMode("view");
+  }
+
+  async function handleMerge() {
+    if (!originalBytes || !documentName) return;
+    setError(null);
+    try {
+      const opened = await fs.openDocument();
+      const merged = await mergeDocuments(originalBytes, opened.bytes);
+      await loadIntoState(merged, documentName, fileHandle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao mesclar PDFs");
+    }
+  }
+
+  async function handleSplit() {
+    if (!originalBytes || !documentName) return;
+    setError(null);
+    try {
+      const { first, second } = await splitDocument(originalBytes, splitAt);
+      const base = documentName.replace(/\.pdf$/i, "");
+      await fs.saveDocument(first, `${base}-parte1.pdf`);
+      await fs.saveDocument(second, `${base}-parte2.pdf`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao dividir o PDF");
+    }
+  }
+
   return (
     <div>
       <header>
@@ -88,24 +148,62 @@ function Viewer() {
             {isSaving ? "Salvando…" : "Salvar PDF"}
           </button>
         )}
+        {handle && (
+          <button
+            type="button"
+            onClick={() => (mode === "organize" ? handleCancelOrganization() : setMode("organize"))}
+          >
+            {mode === "organize" ? "Voltar à visualização" : "Organizar páginas"}
+          </button>
+        )}
         {documentName && <span>{documentName}</span>}
-        {handle && <ZoomControls scale={scale} onScaleChange={setScale} />}
+        {handle && mode === "view" && <ZoomControls scale={scale} onScaleChange={setScale} />}
       </header>
 
-      {handle && (
+      {handle && mode === "view" && (
         <AnnotationToolbar tool={tool} onToolChange={setTool} color={color} onColorChange={setColor} />
       )}
 
-      {tool === "signature" && !pendingSignature && (
+      {mode === "view" && tool === "signature" && !pendingSignature && (
         <SignaturePad onCapture={setPendingSignature} />
       )}
-      {tool === "signature" && pendingSignature && (
+      {mode === "view" && tool === "signature" && pendingSignature && (
         <p>Clique na página para posicionar a assinatura.</p>
       )}
 
       {error && <p role="alert">{error}</p>}
 
-      {handle ? (
+      {handle && mode === "organize" && (
+        <div>
+          <div>
+            <button type="button" onClick={handleApplyOrganization}>
+              Aplicar alterações
+            </button>
+            <button type="button" onClick={handleCancelOrganization}>
+              Cancelar
+            </button>
+            <button type="button" onClick={handleMerge}>
+              Adicionar páginas de outro PDF
+            </button>
+            <label>
+              Dividir a partir da página
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, pageDrafts.length - 1)}
+                value={splitAt}
+                onChange={(event) => setSplitAt(Number(event.target.value))}
+              />
+            </label>
+            <button type="button" onClick={handleSplit}>
+              Dividir e exportar
+            </button>
+          </div>
+          <PageOrganizerGrid handle={handle} pages={pageDrafts} onPagesChange={setPageDrafts} />
+        </div>
+      )}
+
+      {handle && mode === "view" ? (
         <div style={{ display: "flex" }}>
           <ThumbnailSidebar handle={handle} currentPage={pageIndex} onSelectPage={setPageIndex} />
           <main style={{ position: "relative", display: "inline-block" }}>
@@ -121,9 +219,9 @@ function Viewer() {
             />
           </main>
         </div>
-      ) : (
-        <p>Nenhum PDF aberto. Clique em "Abrir PDF" para começar.</p>
-      )}
+      ) : null}
+
+      {!handle && <p>Nenhum PDF aberto. Clique em "Abrir PDF" para começar.</p>}
     </div>
   );
 }
