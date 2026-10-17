@@ -1,0 +1,20 @@
+appId: com.acrobait.app
+productName: Acrobait
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Office
+mac:
+  target:
+    - dmg
+  category: public.app-category.productivity
+win:
+  target:
+    - nsis
