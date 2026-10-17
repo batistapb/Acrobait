@@ -13,6 +13,7 @@
   "dependencies": {
     "@acrobait/core": "workspace:*",
     "@acrobait/ui": "workspace:*",
+    "pdfjs-dist": "^4.8.69",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
