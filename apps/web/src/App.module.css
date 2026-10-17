@@ -1,0 +1,169 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--ink-800);
+}
+
+.topBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 52px;
+  padding: 0 var(--space-4);
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-700);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: 0.1px;
+}
+
+.brandMark {
+  color: var(--mark-yellow);
+  flex: none;
+}
+
+.divider {
+  width: 1px;
+  height: 24px;
+  background: var(--ink-700);
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.docName {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-200);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.errorBar {
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  background: var(--signal-red-wash);
+  color: var(--signal-red);
+  font-size: 13px;
+  border-bottom: 1px solid var(--paper-line);
+}
+
+.hint {
+  flex: none;
+  padding: var(--space-2) var(--space-4);
+  background: var(--paper);
+  border-bottom: 1px solid var(--paper-line);
+  color: var(--ink-600);
+  font-size: 12.5px;
+}
+
+.organizeBar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-700);
+  color: var(--ink-200);
+}
+
+.organizeBar .divider {
+  margin: 0 var(--space-1);
+}
+
+.splitField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+
+.splitField input {
+  width: 4em;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.organizeWorkspace {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--ink-900);
+}
+
+.canvasArea {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-6);
+}
+
+.pageStage {
+  position: relative;
+  display: inline-block;
+  height: fit-content;
+  background: var(--paper);
+  box-shadow: var(--shadow-page);
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  text-align: center;
+  max-width: 320px;
+}
+
+.emptyMark {
+  color: var(--ink-600);
+}
+
+.emptyTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 0;
+}
+
+.emptyBody {
+  font-size: 13px;
+  color: var(--ink-600);
+  margin: 0;
+  line-height: 1.5;
+}

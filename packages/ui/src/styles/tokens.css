@@ -1,0 +1,43 @@
+:root {
+  /* Color — paper & ink */
+  --ink-900: #1c2128;
+  --ink-800: #262c35;
+  --ink-700: #343b46;
+  --ink-600: #4b5362;
+  --ink-200: #c7ccd4;
+  --paper: #fdfcfa;
+  --paper-line: #e4e1dc;
+  --paper-line-strong: #cfcac2;
+  --pen-blue: #3456e8;
+  --pen-blue-dim: #2944b8;
+  --pen-blue-wash: #eaefff;
+  --mark-yellow: #ffcb3d;
+  --signal-red: #c94a3b;
+  --signal-red-wash: #fbe9e7;
+  --white: #ffffff;
+
+  /* Type */
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+
+  /* Space */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius-md: 7px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-panel: 0 1px 2px rgba(28, 33, 40, 0.06), 0 8px 24px rgba(28, 33, 40, 0.1);
+  --shadow-page: 0 1px 1px rgba(28, 33, 40, 0.04), 0 2px 10px rgba(28, 33, 40, 0.1),
+    0 16px 40px rgba(28, 33, 40, 0.1);
+
+  /* Motion */
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.3, 1);
+}

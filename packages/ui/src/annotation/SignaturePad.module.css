@@ -1,0 +1,26 @@
+.panel {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3);
+  background: var(--white);
+  border: 1px solid var(--paper-line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+
+.canvas {
+  border: 1px dashed var(--paper-line-strong);
+  border-radius: var(--radius-sm);
+  touch-action: none;
+  background-image: linear-gradient(var(--paper-line) 1px, transparent 1px);
+  background-size: 100% 24px;
+  background-position: 0 10px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}

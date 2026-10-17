@@ -1,0 +1,26 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  background: var(--paper);
+  border-bottom: 1px solid var(--paper-line);
+  overflow-x: auto;
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--paper-line);
+  margin: 0 var(--space-2);
+}
+
+.label {
+  font-size: 12.5px;
+}

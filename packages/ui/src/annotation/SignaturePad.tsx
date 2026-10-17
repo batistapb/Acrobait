@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import styles from "./SignaturePad.module.css";
 
 const PAD_WIDTH = 320;
 const PAD_HEIGHT = 120;
@@ -55,22 +56,22 @@ export function SignaturePad({ onCapture }: { onCapture: (dataUrl: string) => vo
   }
 
   return (
-    <div>
+    <div className={styles.panel}>
       <canvas
         ref={canvasRef}
         width={PAD_WIDTH}
         height={PAD_HEIGHT}
-        style={{ border: "1px solid #ccc", touchAction: "none" }}
+        className={styles.canvas}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
       />
-      <div>
-        <button type="button" onClick={handleClear}>
+      <div className={styles.actions}>
+        <button type="button" className="btn btn--subtle" onClick={handleClear}>
           Limpar
         </button>
-        <button type="button" onClick={handleUse} disabled={isEmpty}>
+        <button type="button" className="btn btn--primary" onClick={handleUse} disabled={isEmpty}>
           Usar assinatura
         </button>
       </div>

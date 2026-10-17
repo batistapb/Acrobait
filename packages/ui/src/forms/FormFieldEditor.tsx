@@ -63,6 +63,7 @@ export function FormFieldEditor({
             <input
               key={field.name}
               type="text"
+              className="fieldInput"
               value={typeof value === "string" ? value : field.value}
               onChange={(event) =>
                 onValuesChange((prev) => ({ ...prev, [field.name]: event.target.value }))
@@ -81,7 +82,7 @@ export function FormFieldEditor({
               onChange={(event) =>
                 onValuesChange((prev) => ({ ...prev, [field.name]: event.target.checked }))
               }
-              style={style}
+              style={{ ...style, accentColor: "var(--pen-blue)" }}
             />
           );
         }
@@ -90,6 +91,7 @@ export function FormFieldEditor({
           return (
             <select
               key={field.name}
+              className="fieldInput"
               value={typeof value === "string" ? value : field.value}
               onChange={(event) =>
                 onValuesChange((prev) => ({ ...prev, [field.name]: event.target.value }))
@@ -111,9 +113,19 @@ export function FormFieldEditor({
         return (
           <div
             key={field.name}
-            style={{ ...style, border: "1px dashed #999", fontSize: 10, overflow: "hidden" }}
+            style={{
+              ...style,
+              border: "1px dashed var(--paper-line-strong)",
+              borderRadius: "var(--radius-sm)",
+              fontSize: 11,
+              color: "var(--ink-600)",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              paddingLeft: 6,
+            }}
           >
-            {field.value || "(radio)"}
+            {field.value || "(somente leitura)"}
           </div>
         );
       })}

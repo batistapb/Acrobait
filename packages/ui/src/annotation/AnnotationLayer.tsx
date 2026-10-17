@@ -10,6 +10,7 @@ import {
   type TextRun,
   type PdfDocumentHandle,
 } from "@acrobait/core";
+import styles from "./AnnotationLayer.module.css";
 
 export interface PendingImage {
   dataUrl: string;
@@ -224,12 +225,8 @@ export function AnnotationLayer({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      style={{
-        position: "absolute",
-        inset: 0,
-        cursor: tool === "select" ? "default" : "crosshair",
-        touchAction: "none",
-      }}
+      className={styles.overlay}
+      style={{ cursor: tool === "select" ? "default" : "crosshair" }}
     >
       <svg width="100%" height="100%" style={{ position: "absolute", inset: 0 }}>
         {pageAnnotations.map((annotation) => renderAnnotation(annotation, scale))}
@@ -259,7 +256,7 @@ export function AnnotationLayer({
               width={selectedAnnotation.rect.width * scale}
               height={selectedAnnotation.rect.height * scale}
               fill="none"
-              stroke="#2563eb"
+              stroke="var(--pen-blue, #3456e8)"
               strokeDasharray="4 2"
             />
             <rect
@@ -267,8 +264,9 @@ export function AnnotationLayer({
               y={(selectedAnnotation.rect.y + selectedAnnotation.rect.height) * scale - 6}
               width={12}
               height={12}
-              fill="#2563eb"
-              style={{ cursor: "nwse-resize" }}
+              rx={2}
+              fill="var(--pen-blue, #3456e8)"
+              className={styles.resizeHandle}
               onPointerDown={(event) => {
                 event.stopPropagation();
                 const point = toPagePoint(event);
@@ -286,72 +284,58 @@ export function AnnotationLayer({
       {pendingComment && (
         <div
           onPointerDown={(event) => event.stopPropagation()}
-          style={{
-            position: "absolute",
-            left: pendingComment.point.x * scale,
-            top: pendingComment.point.y * scale,
-            background: "white",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-            padding: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-          }}
+          className={`${styles.popover} panel`}
+          style={{ left: pendingComment.point.x * scale, top: pendingComment.point.y * scale }}
         >
           <textarea
             autoFocus
             rows={3}
             value={pendingComment.text}
             onChange={(event) => setPendingComment({ ...pendingComment, text: event.target.value })}
-            style={{ display: "block", marginBottom: 4 }}
+            className={`${styles.popoverInput} fieldInput`}
           />
-          <button type="button" onClick={submitComment}>
-            Adicionar
-          </button>
-          <button type="button" onClick={() => setPendingComment(null)}>
-            Cancelar
-          </button>
+          <div className={styles.popoverActions}>
+            <button type="button" className="btn btn--subtle" onClick={() => setPendingComment(null)}>
+              Cancelar
+            </button>
+            <button type="button" className="btn btn--primary" onClick={submitComment}>
+              Adicionar
+            </button>
+          </div>
         </div>
       )}
       {pendingTextEdit && (
         <div
           onPointerDown={(event) => event.stopPropagation()}
+          className={`${styles.popover} panel`}
           style={{
-            position: "absolute",
             left: pendingTextEdit.run.rect.x * scale,
             top: (pendingTextEdit.run.rect.y + pendingTextEdit.run.rect.height + 4) * scale,
-            background: "white",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-            padding: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
           <input
             autoFocus
             value={pendingTextEdit.value}
             onChange={(event) => setPendingTextEdit({ ...pendingTextEdit, value: event.target.value })}
-            style={{ display: "block", marginBottom: 4, minWidth: 160 }}
+            className={`${styles.popoverInput} fieldInput`}
           />
-          <button type="button" onClick={submitTextEdit}>
-            Aplicar
-          </button>
-          <button type="button" onClick={() => setPendingTextEdit(null)}>
-            Cancelar
-          </button>
+          <div className={styles.popoverActions}>
+            <button type="button" className="btn btn--subtle" onClick={() => setPendingTextEdit(null)}>
+              Cancelar
+            </button>
+            <button type="button" className="btn btn--primary" onClick={submitTextEdit}>
+              Aplicar
+            </button>
+          </div>
         </div>
       )}
       {pendingField && (
         <div
           onPointerDown={(event) => event.stopPropagation()}
+          className={`${styles.popover} panel`}
           style={{
-            position: "absolute",
             left: pendingField.rect.x * scale,
             top: (pendingField.rect.y + pendingField.rect.height + 4) * scale,
-            background: "white",
-            border: "1px solid #ccc",
-            borderRadius: 4,
-            padding: 8,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
           }}
         >
           <input
@@ -359,14 +343,16 @@ export function AnnotationLayer({
             placeholder="Nome do campo"
             value={pendingField.name}
             onChange={(event) => setPendingField({ ...pendingField, name: event.target.value })}
-            style={{ display: "block", marginBottom: 4, minWidth: 160 }}
+            className={`${styles.popoverInput} fieldInput`}
           />
-          <button type="button" onClick={submitNewField}>
-            Criar campo
-          </button>
-          <button type="button" onClick={() => setPendingField(null)}>
-            Cancelar
-          </button>
+          <div className={styles.popoverActions}>
+            <button type="button" className="btn btn--subtle" onClick={() => setPendingField(null)}>
+              Cancelar
+            </button>
+            <button type="button" className="btn btn--primary" onClick={submitNewField}>
+              Criar campo
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -404,8 +390,9 @@ function renderAnnotation(annotation: Annotation, scale: number) {
           cx={annotation.position.x * scale}
           cy={annotation.position.y * scale}
           r={6}
-          fill="#ffd93d"
-          stroke="#b38f00"
+          fill="var(--mark-yellow, #ffcb3d)"
+          stroke="var(--ink-700, #343b46)"
+          strokeWidth={1}
         >
           <title>{annotation.text}</title>
         </circle>
@@ -430,13 +417,13 @@ function renderAnnotation(annotation: Annotation, scale: number) {
             y={annotation.coverRect.y * scale}
             width={annotation.coverRect.width * scale}
             height={annotation.coverRect.height * scale}
-            fill="white"
+            fill="var(--paper, #fdfcfa)"
           />
           <text
             x={annotation.coverRect.x * scale}
             y={(annotation.coverRect.y + annotation.coverRect.height * 0.85) * scale}
             fontSize={annotation.fontSize * scale}
-            fill="black"
+            fill="var(--ink-900, #1c2128)"
           >
             {annotation.text}
           </text>
@@ -451,11 +438,17 @@ function renderAnnotation(annotation: Annotation, scale: number) {
             y={annotation.rect.y * scale}
             width={annotation.rect.width * scale}
             height={annotation.rect.height * scale}
-            fill="rgba(37, 99, 235, 0.1)"
-            stroke="#2563eb"
+            fill="var(--pen-blue-wash, #eaefff)"
+            stroke="var(--pen-blue, #3456e8)"
             strokeDasharray="4 2"
           />
-          <text x={annotation.rect.x * scale + 4} y={annotation.rect.y * scale - 4} fontSize={11} fill="#2563eb">
+          <text
+            x={annotation.rect.x * scale + 4}
+            y={annotation.rect.y * scale - 4}
+            fontSize={11}
+            fontFamily="var(--font-mono, monospace)"
+            fill="var(--pen-blue, #3456e8)"
+          >
             {annotation.fieldName}
           </text>
         </g>

@@ -1,0 +1,116 @@
+@import "./tokens.css";
+
+/* Buttons — shared across the dark chrome and the light context bar */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 7px 12px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  background: transparent;
+  transition: background-color 120ms var(--ease-standard), border-color 120ms var(--ease-standard),
+    color 120ms var(--ease-standard);
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn--ghost {
+  color: var(--ink-200);
+}
+.btn--ghost:hover:not(:disabled) {
+  background: var(--ink-700);
+  color: var(--white);
+}
+
+.btn--primary {
+  background: var(--pen-blue);
+  color: var(--white);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--pen-blue-dim);
+}
+
+.btn--tool {
+  color: var(--ink-700);
+  border-color: transparent;
+}
+.btn--tool:hover:not(:disabled) {
+  background: var(--paper-line);
+}
+.btn--tool[aria-pressed="true"] {
+  background: var(--pen-blue-wash);
+  color: var(--pen-blue-dim);
+  border-color: var(--pen-blue);
+}
+
+.btn--subtle {
+  color: var(--ink-700);
+  border-color: var(--paper-line-strong);
+  background: var(--white);
+}
+.btn--subtle:hover:not(:disabled) {
+  background: var(--paper-line);
+}
+
+.btn--danger {
+  color: var(--signal-red);
+}
+.btn--danger:hover:not(:disabled) {
+  background: var(--signal-red-wash);
+}
+
+.btn--icon {
+  padding: 7px;
+}
+
+/* Panels & popovers */
+
+.panel {
+  background: var(--white);
+  border: 1px solid var(--paper-line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+
+.fieldInput {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  border: 1px solid var(--paper-line-strong);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  background: var(--white);
+  color: var(--ink-900);
+}
+.fieldInput:focus-visible {
+  border-color: var(--pen-blue);
+}
+
+.label {
+  font-size: 12px;
+  color: var(--ink-600);
+  font-weight: 500;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--paper-line-strong);
+  padding: 0;
+  cursor: pointer;
+}

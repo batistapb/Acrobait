@@ -11,6 +11,13 @@ import {
   SignaturePad,
   PageOrganizerGrid,
   FormFieldEditor,
+  BrandMarkIcon,
+  FolderOpenIcon,
+  SaveIcon,
+  PagesIcon,
+  FormIcon,
+  MergeIcon,
+  ScissorsIcon,
   type PendingImage,
 } from "@acrobait/ui";
 import {
@@ -30,6 +37,7 @@ import {
   type FormFieldValues,
 } from "@acrobait/core";
 import { WebFileSystemAdapter } from "./adapters/WebFileSystemAdapter.js";
+import styles from "./App.module.css";
 
 configureWorker(pdfWorkerUrl);
 
@@ -68,7 +76,7 @@ function Viewer() {
   const [mode, setMode] = useState<Mode>("view");
 
   const [tool, setTool] = useState<AnnotationTool>("select");
-  const [color, setColor] = useState("#ffd400");
+  const [color, setColor] = useState("#ffcb3d");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -190,33 +198,61 @@ function Viewer() {
   }
 
   return (
-    <div>
-      <header>
-        <h1>Acrobait</h1>
-        <button type="button" onClick={handleOpen}>
-          Abrir PDF
-        </button>
-        {handle && (
-          <button type="button" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Salvando…" : "Salvar PDF"}
+    <div className={styles.shell}>
+      <header className={styles.topBar}>
+        <div className={styles.brand}>
+          <BrandMarkIcon size={20} className={styles.brandMark} />
+          <span>Acrobait</span>
+        </div>
+        <div className={styles.divider} aria-hidden="true" />
+        <div className={styles.fileActions}>
+          <button type="button" className="btn btn--ghost" onClick={handleOpen}>
+            <FolderOpenIcon size={16} />
+            Abrir PDF
           </button>
-        )}
+          {handle && (
+            <button type="button" className="btn btn--ghost" onClick={handleSave} disabled={isSaving}>
+              <SaveIcon size={16} />
+              {isSaving ? "Salvando…" : "Salvar PDF"}
+            </button>
+          )}
+        </div>
+
+        <div className={styles.spacer} />
+
+        {documentName && <span className={styles.docName}>{documentName}</span>}
+
         {handle && (
-          <button
-            type="button"
-            onClick={() => (mode === "organize" ? handleCancelOrganization() : setMode("organize"))}
-          >
-            {mode === "organize" ? "Voltar à visualização" : "Organizar páginas"}
-          </button>
+          <>
+            <div className={styles.divider} aria-hidden="true" />
+            <div className={styles.fileActions}>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                aria-pressed={mode === "organize"}
+                onClick={() => (mode === "organize" ? handleCancelOrganization() : setMode("organize"))}
+              >
+                <PagesIcon size={16} />
+                Organizar páginas
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost"
+                aria-pressed={mode === "form"}
+                onClick={() => setMode(mode === "form" ? "view" : "form")}
+              >
+                <FormIcon size={16} />
+                Preencher formulário
+              </button>
+            </div>
+          </>
         )}
-        {handle && (
-          <button type="button" onClick={() => setMode(mode === "form" ? "view" : "form")}>
-            {mode === "form" ? "Voltar à visualização" : "Preencher formulário"}
-          </button>
-        )}
-        {documentName && <span>{documentName}</span>}
+
         {handle && (mode === "view" || mode === "form") && (
-          <ZoomControls scale={scale} onScaleChange={setScale} />
+          <>
+            <div className={styles.divider} aria-hidden="true" />
+            <ZoomControls scale={scale} onScaleChange={setScale} />
+          </>
         )}
       </header>
 
@@ -228,78 +264,103 @@ function Viewer() {
         <SignaturePad onCapture={handleCaptureSignature} />
       )}
       {mode === "view" && tool === "image" && !pendingImage && (
-        <input type="file" accept="image/*" onChange={handlePickImageFile} />
+        <div className={styles.hint}>
+          <input type="file" accept="image/*" onChange={handlePickImageFile} />
+        </div>
       )}
       {mode === "view" && (tool === "signature" || tool === "image") && pendingImage && (
-        <p>Clique na página para posicionar.</p>
+        <p className={styles.hint}>Clique na página para posicionar.</p>
       )}
       {mode === "view" && tool === "text" && (
-        <p>Clique num texto existente da página para editá-lo.</p>
+        <p className={styles.hint}>Clique num texto existente da página para editá-lo.</p>
       )}
 
-      {error && <p role="alert">{error}</p>}
+      {error && <div className={styles.errorBar}>{error}</div>}
 
       {handle && mode === "organize" && (
-        <div>
-          <div>
-            <button type="button" onClick={handleApplyOrganization}>
+        <>
+          <div className={styles.organizeBar}>
+            <button type="button" className="btn btn--primary" onClick={handleApplyOrganization}>
               Aplicar alterações
             </button>
-            <button type="button" onClick={handleCancelOrganization}>
+            <button type="button" className="btn btn--ghost" onClick={handleCancelOrganization}>
               Cancelar
             </button>
-            <button type="button" onClick={handleMerge}>
+            <div className={styles.divider} aria-hidden="true" />
+            <button type="button" className="btn btn--ghost" onClick={handleMerge}>
+              <MergeIcon size={16} />
               Adicionar páginas de outro PDF
             </button>
-            <label>
-              Dividir a partir da página
+            <div className={styles.splitField}>
+              <label htmlFor="split-at">Dividir a partir da página</label>
               <input
+                id="split-at"
                 type="number"
+                className="fieldInput"
                 min={1}
                 max={Math.max(1, pageDrafts.length - 1)}
                 value={splitAt}
                 onChange={(event) => setSplitAt(Number(event.target.value))}
               />
-            </label>
-            <button type="button" onClick={handleSplit}>
+            </div>
+            <button type="button" className="btn btn--ghost" onClick={handleSplit}>
+              <ScissorsIcon size={16} />
               Dividir e exportar
             </button>
           </div>
-          <PageOrganizerGrid handle={handle} pages={pageDrafts} onPagesChange={setPageDrafts} />
+          <div className={styles.organizeWorkspace}>
+            <PageOrganizerGrid handle={handle} pages={pageDrafts} onPagesChange={setPageDrafts} />
+          </div>
+        </>
+      )}
+
+      {handle && (mode === "view" || mode === "form") && (
+        <div className={styles.workspace}>
+          <ThumbnailSidebar handle={handle} currentPage={pageIndex} onSelectPage={setPageIndex} />
+          <div className={styles.canvasArea}>
+            <div className={styles.pageStage}>
+              <PdfCanvasViewer handle={handle} pageIndex={pageIndex} scale={scale} />
+              {mode === "view" ? (
+                <AnnotationLayer
+                  handle={handle}
+                  pageIndex={pageIndex}
+                  scale={scale}
+                  annotations={annotations}
+                  tool={tool}
+                  color={color}
+                  pendingImage={pendingImage}
+                  onAddAnnotation={handleAddAnnotation}
+                  onUpdateAnnotation={handleUpdateAnnotation}
+                />
+              ) : (
+                <FormFieldEditor
+                  handle={handle}
+                  pageIndex={pageIndex}
+                  scale={scale}
+                  values={formValues}
+                  onValuesChange={setFormValues}
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {handle && (mode === "view" || mode === "form") ? (
-        <div style={{ display: "flex" }}>
-          <ThumbnailSidebar handle={handle} currentPage={pageIndex} onSelectPage={setPageIndex} />
-          <main style={{ position: "relative", display: "inline-block" }}>
-            <PdfCanvasViewer handle={handle} pageIndex={pageIndex} scale={scale} />
-            {mode === "view" ? (
-              <AnnotationLayer
-                handle={handle}
-                pageIndex={pageIndex}
-                scale={scale}
-                annotations={annotations}
-                tool={tool}
-                color={color}
-                pendingImage={pendingImage}
-                onAddAnnotation={handleAddAnnotation}
-                onUpdateAnnotation={handleUpdateAnnotation}
-              />
-            ) : (
-              <FormFieldEditor
-                handle={handle}
-                pageIndex={pageIndex}
-                scale={scale}
-                values={formValues}
-                onValuesChange={setFormValues}
-              />
-            )}
-          </main>
+      {!handle && (
+        <div className={styles.empty}>
+          <div className={`${styles.emptyCard} panel`}>
+            <BrandMarkIcon size={40} className={styles.emptyMark} />
+            <p className={styles.emptyTitle}>Nenhum PDF aberto</p>
+            <p className={styles.emptyBody}>
+              Abra um arquivo para visualizar, anotar, organizar páginas ou preencher formulários.
+            </p>
+            <button type="button" className="btn btn--primary" onClick={handleOpen}>
+              <FolderOpenIcon size={16} />
+              Abrir PDF
+            </button>
+          </div>
         </div>
-      ) : null}
-
-      {!handle && <p>Nenhum PDF aberto. Clique em "Abrir PDF" para começar.</p>}
+      )}
     </div>
   );
 }

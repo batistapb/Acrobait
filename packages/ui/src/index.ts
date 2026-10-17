@@ -8,3 +8,4 @@ export { AnnotationToolbar } from "./annotation/AnnotationToolbar.js";
 export { SignaturePad } from "./annotation/SignaturePad.js";
 export { PageOrganizerGrid } from "./pageOrganizer/PageOrganizerGrid.js";
 export { FormFieldEditor } from "./forms/FormFieldEditor.js";
+export * from "./icons/Icon.js";

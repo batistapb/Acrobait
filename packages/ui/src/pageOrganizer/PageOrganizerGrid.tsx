@@ -15,6 +15,8 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { PageDraft, PdfDocumentHandle } from "@acrobait/core";
 import { PdfCanvasViewer } from "../viewer/PdfCanvasViewer.js";
+import { RotateIcon, TrashIcon } from "../icons/Icon.js";
+import styles from "./PageOrganizerGrid.module.css";
 
 const THUMB_SCALE = 0.3;
 
@@ -42,25 +44,33 @@ function SortablePageThumbnail({
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <div style={{ transform: `rotate(${draft.rotationDelta}deg)` }}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={styles.card}>
+      <div className={styles.thumbWrap} style={{ transform: `rotate(${draft.rotationDelta}deg)` }}>
         <PdfCanvasViewer handle={handle} pageIndex={draft.sourceIndex} scale={THUMB_SCALE} />
       </div>
-      <span>{displayIndex + 1}</span>
-      <button
-        type="button"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={onRotate}
-      >
-        Girar
-      </button>
-      <button
-        type="button"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={onDelete}
-      >
-        Excluir
-      </button>
+      <span className={styles.number}>{displayIndex + 1}</span>
+      <div className={styles.actions}>
+        <button
+          type="button"
+          className="btn btn--ghost btn--icon"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onRotate}
+          title="Girar"
+          aria-label="Girar página"
+        >
+          <RotateIcon size={15} />
+        </button>
+        <button
+          type="button"
+          className="btn btn--ghost btn--icon"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onDelete}
+          title="Excluir"
+          aria-label="Excluir página"
+        >
+          <TrashIcon size={15} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -109,13 +119,7 @@ export function PageOrganizerGrid({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={pages.map((p) => p.id)} strategy={rectSortingStrategy}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-            gap: 12,
-          }}
-        >
+        <div className={styles.grid}>
           {pages.map((draft, displayIndex) => (
             <SortablePageThumbnail
               key={draft.id}
