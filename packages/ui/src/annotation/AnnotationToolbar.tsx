@@ -6,6 +6,8 @@ const TOOLS: { tool: AnnotationTool; label: string }[] = [
   { tool: "freehand", label: "Desenhar" },
   { tool: "comment", label: "Comentar" },
   { tool: "signature", label: "Assinar" },
+  { tool: "image", label: "Inserir imagem" },
+  { tool: "text", label: "Editar texto" },
 ];
 
 export function AnnotationToolbar({

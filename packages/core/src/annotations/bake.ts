@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, type Color } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type Color, type PDFFont } from "pdf-lib";
 import type { Annotation } from "./types.js";
 
 function hexToColor(hex: string): Color {
@@ -36,6 +36,7 @@ export async function bakeAnnotations(
 
   const pdfDoc = await PDFDocument.load(bytes);
   const pages = pdfDoc.getPages();
+  let helvetica: PDFFont | null = null;
 
   for (const annotation of annotations) {
     const page = pages[annotation.pageIndex];
@@ -87,15 +88,44 @@ export async function bakeAnnotations(
         }
         break;
       }
-      case "signature": {
+      case "signature":
+      case "image": {
         const { x, y, width, height } = annotation.rect;
-        const pngImage = await pdfDoc.embedPng(dataUrlToBytes(annotation.imageDataUrl));
-        page.drawImage(pngImage, {
+        const isJpeg = annotation.imageDataUrl.startsWith("data:image/jpeg");
+        const imageBytes = dataUrlToBytes(annotation.imageDataUrl);
+        const embedded = isJpeg
+          ? await pdfDoc.embedJpg(imageBytes)
+          : await pdfDoc.embedPng(imageBytes);
+        page.drawImage(embedded, {
           x,
           y: pageHeight - y - height,
           width,
           height,
         });
+        break;
+      }
+      case "textEdit": {
+        const { x, y, width, height } = annotation.coverRect;
+        // Cover the original glyphs, then redraw with a standard font — pdf-lib
+        // can't edit an existing content stream's text runs in place (see
+        // packages/core/src/engine/textContent.ts for how the run is located).
+        page.drawRectangle({
+          x,
+          y: pageHeight - y - height,
+          width,
+          height,
+          color: rgb(1, 1, 1),
+        });
+        if (annotation.text) {
+          helvetica ??= await pdfDoc.embedFont(StandardFonts.Helvetica);
+          page.drawText(annotation.text, {
+            x,
+            y: pageHeight - y - height,
+            size: annotation.fontSize,
+            font: helvetica,
+            color: rgb(0, 0, 0),
+          });
+        }
         break;
       }
     }

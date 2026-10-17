@@ -5,6 +5,11 @@ export interface Rect {
   height: number;
 }
 
+export interface Point {
+  x: number;
+  y: number;
+}
+
 export interface PageRef {
   index: number;
   width: number;

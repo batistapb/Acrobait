@@ -10,6 +10,7 @@ import {
   AnnotationToolbar,
   SignaturePad,
   PageOrganizerGrid,
+  type PendingImage,
 } from "@acrobait/ui";
 import {
   configureWorker,
@@ -23,12 +24,34 @@ import {
   type Annotation,
   type AnnotationTool,
   type PageDraft,
+  type Rect,
 } from "@acrobait/core";
 import { WebFileSystemAdapter } from "./adapters/WebFileSystemAdapter.js";
 
 configureWorker(pdfWorkerUrl);
 
 type Mode = "view" | "organize";
+
+const SIGNATURE_PLACEMENT_SIZE = { width: 160, height: 60 };
+const MAX_IMAGE_PLACEMENT_DIMENSION = 220;
+
+function readImageFile(file: File): Promise<PendingImage> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("Falha ao ler a imagem"));
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      const img = new Image();
+      img.onerror = () => reject(new Error("Falha ao carregar a imagem"));
+      img.onload = () => {
+        const scale = Math.min(1, MAX_IMAGE_PLACEMENT_DIMENSION / Math.max(img.naturalWidth, img.naturalHeight));
+        resolve({ dataUrl, width: img.naturalWidth * scale, height: img.naturalHeight * scale });
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 function Viewer() {
   const fs = useFileSystem();
@@ -44,7 +67,7 @@ function Viewer() {
   const [tool, setTool] = useState<AnnotationTool>("select");
   const [color, setColor] = useState("#ffd400");
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [pendingSignature, setPendingSignature] = useState<string | null>(null);
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const [pageDrafts, setPageDrafts] = useState<PageDraft[]>([]);
@@ -88,9 +111,33 @@ function Viewer() {
 
   function handleAddAnnotation(annotation: Annotation) {
     setAnnotations((prev) => [...prev, annotation]);
-    if (annotation.type === "signature") {
-      setPendingSignature(null);
+    if (annotation.type === "signature" || annotation.type === "image") {
+      setPendingImage(null);
       setTool("select");
+    } else if (annotation.type === "textEdit") {
+      setTool("select");
+    }
+  }
+
+  function handleUpdateAnnotation(id: string, rect: Rect) {
+    setAnnotations((prev) =>
+      prev.map((a) => ((a.type === "signature" || a.type === "image") && a.id === id ? { ...a, rect } : a)),
+    );
+  }
+
+  function handleCaptureSignature(dataUrl: string) {
+    setPendingImage({ dataUrl, ...SIGNATURE_PLACEMENT_SIZE });
+  }
+
+  async function handlePickImageFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setError(null);
+    try {
+      setPendingImage(await readImageFile(file));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao carregar a imagem");
     }
   }
 
@@ -164,11 +211,17 @@ function Viewer() {
         <AnnotationToolbar tool={tool} onToolChange={setTool} color={color} onColorChange={setColor} />
       )}
 
-      {mode === "view" && tool === "signature" && !pendingSignature && (
-        <SignaturePad onCapture={setPendingSignature} />
+      {mode === "view" && tool === "signature" && !pendingImage && (
+        <SignaturePad onCapture={handleCaptureSignature} />
       )}
-      {mode === "view" && tool === "signature" && pendingSignature && (
-        <p>Clique na página para posicionar a assinatura.</p>
+      {mode === "view" && tool === "image" && !pendingImage && (
+        <input type="file" accept="image/*" onChange={handlePickImageFile} />
+      )}
+      {mode === "view" && (tool === "signature" || tool === "image") && pendingImage && (
+        <p>Clique na página para posicionar.</p>
+      )}
+      {mode === "view" && tool === "text" && (
+        <p>Clique num texto existente da página para editá-lo.</p>
       )}
 
       {error && <p role="alert">{error}</p>}
@@ -209,13 +262,15 @@ function Viewer() {
           <main style={{ position: "relative", display: "inline-block" }}>
             <PdfCanvasViewer handle={handle} pageIndex={pageIndex} scale={scale} />
             <AnnotationLayer
+              handle={handle}
               pageIndex={pageIndex}
               scale={scale}
               annotations={annotations}
               tool={tool}
               color={color}
-              pendingSignature={pendingSignature}
+              pendingImage={pendingImage}
               onAddAnnotation={handleAddAnnotation}
+              onUpdateAnnotation={handleUpdateAnnotation}
             />
           </main>
         </div>

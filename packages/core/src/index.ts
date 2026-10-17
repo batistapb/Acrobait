@@ -9,6 +9,7 @@ export {
 } from "./engine/renderEngine.js";
 export type { PdfDocumentHandle, PageSize } from "./engine/renderEngine.js";
 export { bakeAnnotations } from "./annotations/bake.js";
+export { isMovableAnnotation } from "./annotations/types.js";
 export type {
   Annotation,
   AnnotationTool,
@@ -17,7 +18,12 @@ export type {
   FreehandAnnotation,
   CommentAnnotation,
   SignatureAnnotation,
+  ImageAnnotation,
+  TextEditAnnotation,
+  MovableAnnotation,
 } from "./annotations/types.js";
+export { getPageTextRuns, findTextRunAtPoint } from "./engine/textContent.js";
+export type { TextRun } from "./engine/textContent.js";
 export { applyPageOrganization, createInitialPageDrafts } from "./pageOps/apply.js";
 export { mergeDocuments } from "./pageOps/merge.js";
 export { splitDocument } from "./pageOps/split.js";

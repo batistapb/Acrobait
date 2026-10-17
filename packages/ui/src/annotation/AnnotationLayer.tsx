@@ -1,33 +1,79 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import type { Annotation, AnnotationTool, Point } from "@acrobait/core";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  getPageTextRuns,
+  findTextRunAtPoint,
+  isMovableAnnotation,
+  type Annotation,
+  type AnnotationTool,
+  type Point,
+  type Rect,
+  type TextRun,
+  type PdfDocumentHandle,
+} from "@acrobait/core";
 
-const DEFAULT_SIGNATURE_WIDTH = 160;
-const DEFAULT_SIGNATURE_HEIGHT = 60;
+export interface PendingImage {
+  dataUrl: string;
+  width: number;
+  height: number;
+}
+
+type DragMode =
+  | { kind: "move"; id: string; startPoint: Point; startRect: Rect }
+  | { kind: "resize"; id: string; startPoint: Point; startRect: Rect };
+
+function pointInRect(point: Point, rect: Rect): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  );
+}
 
 export function AnnotationLayer({
+  handle,
   pageIndex,
   scale,
   annotations,
   tool,
   color,
-  pendingSignature,
+  pendingImage,
   onAddAnnotation,
+  onUpdateAnnotation,
 }: {
+  handle: PdfDocumentHandle;
   pageIndex: number;
   scale: number;
   annotations: Annotation[];
   tool: AnnotationTool;
   color: string;
-  pendingSignature: string | null;
+  pendingImage: PendingImage | null;
   onAddAnnotation: (annotation: Annotation) => void;
+  onUpdateAnnotation: (id: string, rect: Rect) => void;
 }) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [dragCurrent, setDragCurrent] = useState<Point | null>(null);
   const [strokePoints, setStrokePoints] = useState<Point[] | null>(null);
   const [pendingComment, setPendingComment] = useState<{ point: Point; text: string } | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [dragMode, setDragMode] = useState<DragMode | null>(null);
+  const [textRuns, setTextRuns] = useState<TextRun[]>([]);
+  const [pendingTextEdit, setPendingTextEdit] = useState<{ run: TextRun; value: string } | null>(
+    null,
+  );
 
-  function toPagePoint(event: ReactPointerEvent<HTMLDivElement>): Point {
+  useEffect(() => {
+    let cancelled = false;
+    getPageTextRuns(handle, pageIndex).then((runs) => {
+      if (!cancelled) setTextRuns(runs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [handle, pageIndex]);
+
+  function toPagePoint(event: { clientX: number; clientY: number }): Point {
     const bounds = overlayRef.current?.getBoundingClientRect();
     if (!bounds) return { x: 0, y: 0 };
     return {
@@ -35,6 +81,11 @@ export function AnnotationLayer({
       y: (event.clientY - bounds.top) / scale,
     };
   }
+
+  const pageAnnotations = annotations.filter((a) => a.pageIndex === pageIndex);
+  const selectedAnnotation = pageAnnotations.find(
+    (a) => a.id === selectedId && isMovableAnnotation(a),
+  );
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     const point = toPagePoint(event);
@@ -45,19 +96,25 @@ export function AnnotationLayer({
       setStrokePoints([point]);
     } else if (tool === "comment" && !pendingComment) {
       setPendingComment({ point, text: "" });
-    } else if (tool === "signature" && pendingSignature) {
+    } else if (tool === "text" && !pendingTextEdit) {
+      const run = findTextRunAtPoint(textRuns, point);
+      if (run) setPendingTextEdit({ run, value: run.text });
+    } else if ((tool === "signature" || tool === "image") && pendingImage) {
       onAddAnnotation({
         id: crypto.randomUUID(),
-        type: "signature",
+        type: tool,
         pageIndex,
-        rect: {
-          x: point.x,
-          y: point.y,
-          width: DEFAULT_SIGNATURE_WIDTH,
-          height: DEFAULT_SIGNATURE_HEIGHT,
-        },
-        imageDataUrl: pendingSignature,
+        rect: { x: point.x, y: point.y, width: pendingImage.width, height: pendingImage.height },
+        imageDataUrl: pendingImage.dataUrl,
       });
+    } else if (tool === "select") {
+      const hit = [...pageAnnotations].reverse().find((a) => isMovableAnnotation(a) && pointInRect(point, a.rect));
+      if (hit && isMovableAnnotation(hit)) {
+        setSelectedId(hit.id);
+        setDragMode({ kind: "move", id: hit.id, startPoint: point, startRect: { ...hit.rect } });
+      } else {
+        setSelectedId(null);
+      }
     }
   }
 
@@ -66,6 +123,19 @@ export function AnnotationLayer({
       setDragCurrent(toPagePoint(event));
     } else if (tool === "freehand" && strokePoints) {
       setStrokePoints([...strokePoints, toPagePoint(event)]);
+    } else if (dragMode) {
+      const point = toPagePoint(event);
+      const dx = point.x - dragMode.startPoint.x;
+      const dy = point.y - dragMode.startPoint.y;
+      if (dragMode.kind === "move") {
+        onUpdateAnnotation(dragMode.id, { ...dragMode.startRect, x: dragMode.startRect.x + dx, y: dragMode.startRect.y + dy });
+      } else {
+        onUpdateAnnotation(dragMode.id, {
+          ...dragMode.startRect,
+          width: Math.max(10, dragMode.startRect.width + dx),
+          height: Math.max(10, dragMode.startRect.height + dy),
+        });
+      }
     }
   }
 
@@ -93,6 +163,7 @@ export function AnnotationLayer({
       }
       setStrokePoints(null);
     }
+    setDragMode(null);
   }
 
   function submitComment() {
@@ -110,7 +181,18 @@ export function AnnotationLayer({
     setPendingComment(null);
   }
 
-  const pageAnnotations = annotations.filter((a) => a.pageIndex === pageIndex);
+  function submitTextEdit() {
+    if (!pendingTextEdit) return;
+    onAddAnnotation({
+      id: crypto.randomUUID(),
+      type: "textEdit",
+      pageIndex,
+      coverRect: pendingTextEdit.run.rect,
+      text: pendingTextEdit.value,
+      fontSize: pendingTextEdit.run.fontSize,
+    });
+    setPendingTextEdit(null);
+  }
 
   return (
     <div
@@ -122,7 +204,6 @@ export function AnnotationLayer({
         position: "absolute",
         inset: 0,
         cursor: tool === "select" ? "default" : "crosshair",
-        pointerEvents: tool === "select" ? "none" : "auto",
         touchAction: "none",
       }}
     >
@@ -146,6 +227,37 @@ export function AnnotationLayer({
             strokeWidth={2}
           />
         )}
+        {selectedAnnotation && isMovableAnnotation(selectedAnnotation) && (
+          <g>
+            <rect
+              x={selectedAnnotation.rect.x * scale}
+              y={selectedAnnotation.rect.y * scale}
+              width={selectedAnnotation.rect.width * scale}
+              height={selectedAnnotation.rect.height * scale}
+              fill="none"
+              stroke="#2563eb"
+              strokeDasharray="4 2"
+            />
+            <rect
+              x={(selectedAnnotation.rect.x + selectedAnnotation.rect.width) * scale - 6}
+              y={(selectedAnnotation.rect.y + selectedAnnotation.rect.height) * scale - 6}
+              width={12}
+              height={12}
+              fill="#2563eb"
+              style={{ cursor: "nwse-resize" }}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+                const point = toPagePoint(event);
+                setDragMode({
+                  kind: "resize",
+                  id: selectedAnnotation.id,
+                  startPoint: point,
+                  startRect: { ...selectedAnnotation.rect },
+                });
+              }}
+            />
+          </g>
+        )}
       </svg>
       {pendingComment && (
         <div
@@ -165,15 +277,41 @@ export function AnnotationLayer({
             autoFocus
             rows={3}
             value={pendingComment.text}
-            onChange={(event) =>
-              setPendingComment({ ...pendingComment, text: event.target.value })
-            }
+            onChange={(event) => setPendingComment({ ...pendingComment, text: event.target.value })}
             style={{ display: "block", marginBottom: 4 }}
           />
           <button type="button" onClick={submitComment}>
             Adicionar
           </button>
           <button type="button" onClick={() => setPendingComment(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+      {pendingTextEdit && (
+        <div
+          onPointerDown={(event) => event.stopPropagation()}
+          style={{
+            position: "absolute",
+            left: pendingTextEdit.run.rect.x * scale,
+            top: (pendingTextEdit.run.rect.y + pendingTextEdit.run.rect.height + 4) * scale,
+            background: "white",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            padding: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          <input
+            autoFocus
+            value={pendingTextEdit.value}
+            onChange={(event) => setPendingTextEdit({ ...pendingTextEdit, value: event.target.value })}
+            style={{ display: "block", marginBottom: 4, minWidth: 160 }}
+          />
+          <button type="button" onClick={submitTextEdit}>
+            Aplicar
+          </button>
+          <button type="button" onClick={() => setPendingTextEdit(null)}>
             Cancelar
           </button>
         </div>
@@ -220,6 +358,7 @@ function renderAnnotation(annotation: Annotation, scale: number) {
         </circle>
       );
     case "signature":
+    case "image":
       return (
         <image
           key={annotation.id}
@@ -229,6 +368,26 @@ function renderAnnotation(annotation: Annotation, scale: number) {
           width={annotation.rect.width * scale}
           height={annotation.rect.height * scale}
         />
+      );
+    case "textEdit":
+      return (
+        <g key={annotation.id}>
+          <rect
+            x={annotation.coverRect.x * scale}
+            y={annotation.coverRect.y * scale}
+            width={annotation.coverRect.width * scale}
+            height={annotation.coverRect.height * scale}
+            fill="white"
+          />
+          <text
+            x={annotation.coverRect.x * scale}
+            y={(annotation.coverRect.y + annotation.coverRect.height * 0.85) * scale}
+            fontSize={annotation.fontSize * scale}
+            fill="black"
+          >
+            {annotation.text}
+          </text>
+        </g>
       );
     default:
       return null;

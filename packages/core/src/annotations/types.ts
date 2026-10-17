@@ -1,11 +1,15 @@
-import type { Rect } from "../engine/types.js";
+import type { Rect, Point } from "../engine/types.js";
 
-export type AnnotationTool = "select" | "highlight" | "freehand" | "comment" | "signature";
+export type { Point } from "../engine/types.js";
 
-export interface Point {
-  x: number;
-  y: number;
-}
+export type AnnotationTool =
+  | "select"
+  | "highlight"
+  | "freehand"
+  | "comment"
+  | "signature"
+  | "image"
+  | "text";
 
 /**
  * All geometry is in page space at scale 1 with a top-left origin — the same
@@ -45,8 +49,38 @@ export interface SignatureAnnotation {
   imageDataUrl: string;
 }
 
+export interface ImageAnnotation {
+  id: string;
+  type: "image";
+  pageIndex: number;
+  rect: Rect;
+  imageDataUrl: string;
+}
+
+/**
+ * v1 "cover and replace" text edit: paints a cover rect over the original
+ * text run and draws the replacement in a standard font. See
+ * packages/core/src/annotations/bake.ts for the rationale.
+ */
+export interface TextEditAnnotation {
+  id: string;
+  type: "textEdit";
+  pageIndex: number;
+  coverRect: Rect;
+  text: string;
+  fontSize: number;
+}
+
 export type Annotation =
   | HighlightAnnotation
   | FreehandAnnotation
   | CommentAnnotation
-  | SignatureAnnotation;
+  | SignatureAnnotation
+  | ImageAnnotation
+  | TextEditAnnotation;
+
+export type MovableAnnotation = SignatureAnnotation | ImageAnnotation;
+
+export function isMovableAnnotation(annotation: Annotation): annotation is MovableAnnotation {
+  return annotation.type === "signature" || annotation.type === "image";
+}
