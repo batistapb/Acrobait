@@ -8,6 +8,8 @@ const TOOLS: { tool: AnnotationTool; label: string }[] = [
   { tool: "signature", label: "Assinar" },
   { tool: "image", label: "Inserir imagem" },
   { tool: "text", label: "Editar texto" },
+  { tool: "newTextField", label: "Campo de texto" },
+  { tool: "newCheckbox", label: "Caixa de seleção" },
 ];
 
 export function AnnotationToolbar({

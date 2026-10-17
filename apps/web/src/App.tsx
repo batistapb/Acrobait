@@ -10,6 +10,7 @@ import {
   AnnotationToolbar,
   SignaturePad,
   PageOrganizerGrid,
+  FormFieldEditor,
   type PendingImage,
 } from "@acrobait/ui";
 import {
@@ -20,17 +21,19 @@ import {
   createInitialPageDrafts,
   mergeDocuments,
   splitDocument,
+  fillFormFields,
   type PdfDocumentHandle,
   type Annotation,
   type AnnotationTool,
   type PageDraft,
   type Rect,
+  type FormFieldValues,
 } from "@acrobait/core";
 import { WebFileSystemAdapter } from "./adapters/WebFileSystemAdapter.js";
 
 configureWorker(pdfWorkerUrl);
 
-type Mode = "view" | "organize";
+type Mode = "view" | "organize" | "form";
 
 const SIGNATURE_PLACEMENT_SIZE = { width: 160, height: 60 };
 const MAX_IMAGE_PLACEMENT_DIMENSION = 220;
@@ -72,6 +75,7 @@ function Viewer() {
 
   const [pageDrafts, setPageDrafts] = useState<PageDraft[]>([]);
   const [splitAt, setSplitAt] = useState(1);
+  const [formValues, setFormValues] = useState<FormFieldValues>({});
 
   async function loadIntoState(bytes: Uint8Array, name: string, newFileHandle: unknown) {
     const doc = await loadDocument(bytes);
@@ -83,6 +87,7 @@ function Viewer() {
     setAnnotations([]);
     setPageDrafts(createInitialPageDrafts(doc.pageCount));
     setSplitAt(1);
+    setFormValues({});
   }
 
   async function handleOpen() {
@@ -100,7 +105,8 @@ function Viewer() {
     setError(null);
     setIsSaving(true);
     try {
-      const finalBytes = await bakeAnnotations(originalBytes, annotations);
+      const withAnnotations = await bakeAnnotations(originalBytes, annotations);
+      const finalBytes = await fillFormFields(withAnnotations, formValues);
       await fs.saveDocument(finalBytes, documentName, fileHandle);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao salvar o PDF");
@@ -203,8 +209,15 @@ function Viewer() {
             {mode === "organize" ? "Voltar à visualização" : "Organizar páginas"}
           </button>
         )}
+        {handle && (
+          <button type="button" onClick={() => setMode(mode === "form" ? "view" : "form")}>
+            {mode === "form" ? "Voltar à visualização" : "Preencher formulário"}
+          </button>
+        )}
         {documentName && <span>{documentName}</span>}
-        {handle && mode === "view" && <ZoomControls scale={scale} onScaleChange={setScale} />}
+        {handle && (mode === "view" || mode === "form") && (
+          <ZoomControls scale={scale} onScaleChange={setScale} />
+        )}
       </header>
 
       {handle && mode === "view" && (
@@ -256,22 +269,32 @@ function Viewer() {
         </div>
       )}
 
-      {handle && mode === "view" ? (
+      {handle && (mode === "view" || mode === "form") ? (
         <div style={{ display: "flex" }}>
           <ThumbnailSidebar handle={handle} currentPage={pageIndex} onSelectPage={setPageIndex} />
           <main style={{ position: "relative", display: "inline-block" }}>
             <PdfCanvasViewer handle={handle} pageIndex={pageIndex} scale={scale} />
-            <AnnotationLayer
-              handle={handle}
-              pageIndex={pageIndex}
-              scale={scale}
-              annotations={annotations}
-              tool={tool}
-              color={color}
-              pendingImage={pendingImage}
-              onAddAnnotation={handleAddAnnotation}
-              onUpdateAnnotation={handleUpdateAnnotation}
-            />
+            {mode === "view" ? (
+              <AnnotationLayer
+                handle={handle}
+                pageIndex={pageIndex}
+                scale={scale}
+                annotations={annotations}
+                tool={tool}
+                color={color}
+                pendingImage={pendingImage}
+                onAddAnnotation={handleAddAnnotation}
+                onUpdateAnnotation={handleUpdateAnnotation}
+              />
+            ) : (
+              <FormFieldEditor
+                handle={handle}
+                pageIndex={pageIndex}
+                scale={scale}
+                values={formValues}
+                onValuesChange={setFormValues}
+              />
+            )}
           </main>
         </div>
       ) : null}

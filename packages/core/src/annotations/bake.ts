@@ -128,6 +128,20 @@ export async function bakeAnnotations(
         }
         break;
       }
+      case "newTextField": {
+        const { x, y, width, height } = annotation.rect;
+        const form = pdfDoc.getForm();
+        const field = form.createTextField(annotation.fieldName);
+        field.addToPage(page, { x, y: pageHeight - y - height, width, height });
+        break;
+      }
+      case "newCheckbox": {
+        const { x, y, width, height } = annotation.rect;
+        const form = pdfDoc.getForm();
+        const field = form.createCheckBox(annotation.fieldName);
+        field.addToPage(page, { x, y: pageHeight - y - height, width, height });
+        break;
+      }
     }
   }
 

@@ -21,6 +21,8 @@ export type {
   ImageAnnotation,
   TextEditAnnotation,
   MovableAnnotation,
+  NewTextFieldAnnotation,
+  NewCheckboxAnnotation,
 } from "./annotations/types.js";
 export { getPageTextRuns, findTextRunAtPoint } from "./engine/textContent.js";
 export type { TextRun } from "./engine/textContent.js";
@@ -29,3 +31,6 @@ export { mergeDocuments } from "./pageOps/merge.js";
 export { splitDocument } from "./pageOps/split.js";
 export type { PageDraft } from "./pageOps/types.js";
 export type { SplitResult } from "./pageOps/split.js";
+export { getPageFormFields } from "./forms/readFields.js";
+export { fillFormFields } from "./forms/fillFields.js";
+export type { FormField, FormFieldType, FormFieldValues } from "./forms/types.js";

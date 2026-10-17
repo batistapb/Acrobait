@@ -62,6 +62,11 @@ export function AnnotationLayer({
   const [pendingTextEdit, setPendingTextEdit] = useState<{ run: TextRun; value: string } | null>(
     null,
   );
+  const [pendingField, setPendingField] = useState<{
+    kind: "newTextField" | "newCheckbox";
+    rect: Rect;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +94,7 @@ export function AnnotationLayer({
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     const point = toPagePoint(event);
-    if (tool === "highlight") {
+    if (tool === "highlight" || tool === "newTextField" || tool === "newCheckbox") {
       setDragStart(point);
       setDragCurrent(point);
     } else if (tool === "freehand") {
@@ -119,7 +124,7 @@ export function AnnotationLayer({
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (tool === "highlight" && dragStart) {
+    if ((tool === "highlight" || tool === "newTextField" || tool === "newCheckbox") && dragStart) {
       setDragCurrent(toPagePoint(event));
     } else if (tool === "freehand" && strokePoints) {
       setStrokePoints([...strokePoints, toPagePoint(event)]);
@@ -140,13 +145,17 @@ export function AnnotationLayer({
   }
 
   function handlePointerUp() {
-    if (tool === "highlight" && dragStart && dragCurrent) {
+    if ((tool === "highlight" || tool === "newTextField" || tool === "newCheckbox") && dragStart && dragCurrent) {
       const x = Math.min(dragStart.x, dragCurrent.x);
       const y = Math.min(dragStart.y, dragCurrent.y);
       const width = Math.abs(dragCurrent.x - dragStart.x);
       const height = Math.abs(dragCurrent.y - dragStart.y);
       if (width > 2 && height > 2) {
-        onAddAnnotation({ id: crypto.randomUUID(), type: "highlight", pageIndex, rect: { x, y, width, height }, color });
+        if (tool === "highlight") {
+          onAddAnnotation({ id: crypto.randomUUID(), type: "highlight", pageIndex, rect: { x, y, width, height }, color });
+        } else {
+          setPendingField({ kind: tool, rect: { x, y, width, height }, name: "" });
+        }
       }
       setDragStart(null);
       setDragCurrent(null);
@@ -179,6 +188,21 @@ export function AnnotationLayer({
       text: pendingComment.text.trim(),
     });
     setPendingComment(null);
+  }
+
+  function submitNewField() {
+    if (!pendingField || !pendingField.name.trim()) {
+      setPendingField(null);
+      return;
+    }
+    onAddAnnotation({
+      id: crypto.randomUUID(),
+      type: pendingField.kind,
+      pageIndex,
+      rect: pendingField.rect,
+      fieldName: pendingField.name.trim(),
+    });
+    setPendingField(null);
   }
 
   function submitTextEdit() {
@@ -316,6 +340,35 @@ export function AnnotationLayer({
           </button>
         </div>
       )}
+      {pendingField && (
+        <div
+          onPointerDown={(event) => event.stopPropagation()}
+          style={{
+            position: "absolute",
+            left: pendingField.rect.x * scale,
+            top: (pendingField.rect.y + pendingField.rect.height + 4) * scale,
+            background: "white",
+            border: "1px solid #ccc",
+            borderRadius: 4,
+            padding: 8,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+          }}
+        >
+          <input
+            autoFocus
+            placeholder="Nome do campo"
+            value={pendingField.name}
+            onChange={(event) => setPendingField({ ...pendingField, name: event.target.value })}
+            style={{ display: "block", marginBottom: 4, minWidth: 160 }}
+          />
+          <button type="button" onClick={submitNewField}>
+            Criar campo
+          </button>
+          <button type="button" onClick={() => setPendingField(null)}>
+            Cancelar
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -386,6 +439,24 @@ function renderAnnotation(annotation: Annotation, scale: number) {
             fill="black"
           >
             {annotation.text}
+          </text>
+        </g>
+      );
+    case "newTextField":
+    case "newCheckbox":
+      return (
+        <g key={annotation.id}>
+          <rect
+            x={annotation.rect.x * scale}
+            y={annotation.rect.y * scale}
+            width={annotation.rect.width * scale}
+            height={annotation.rect.height * scale}
+            fill="rgba(37, 99, 235, 0.1)"
+            stroke="#2563eb"
+            strokeDasharray="4 2"
+          />
+          <text x={annotation.rect.x * scale + 4} y={annotation.rect.y * scale - 4} fontSize={11} fill="#2563eb">
+            {annotation.fieldName}
           </text>
         </g>
       );

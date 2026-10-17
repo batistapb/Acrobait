@@ -9,7 +9,9 @@ export type AnnotationTool =
   | "comment"
   | "signature"
   | "image"
-  | "text";
+  | "text"
+  | "newTextField"
+  | "newCheckbox";
 
 /**
  * All geometry is in page space at scale 1 with a top-left origin — the same
@@ -71,13 +73,33 @@ export interface TextEditAnnotation {
   fontSize: number;
 }
 
+/** Places a brand-new AcroForm text field; baked via pdf-lib's form.createTextField. */
+export interface NewTextFieldAnnotation {
+  id: string;
+  type: "newTextField";
+  pageIndex: number;
+  rect: Rect;
+  fieldName: string;
+}
+
+/** Places a brand-new AcroForm checkbox; baked via pdf-lib's form.createCheckBox. */
+export interface NewCheckboxAnnotation {
+  id: string;
+  type: "newCheckbox";
+  pageIndex: number;
+  rect: Rect;
+  fieldName: string;
+}
+
 export type Annotation =
   | HighlightAnnotation
   | FreehandAnnotation
   | CommentAnnotation
   | SignatureAnnotation
   | ImageAnnotation
-  | TextEditAnnotation;
+  | TextEditAnnotation
+  | NewTextFieldAnnotation
+  | NewCheckboxAnnotation;
 
 export type MovableAnnotation = SignatureAnnotation | ImageAnnotation;
 
