@@ -3,6 +3,8 @@ dist/
 build/
 out/
 release/
+# electron-builder's apps/desktop/build/ holds source assets (icons), not output
+!apps/desktop/build/
 .turbo/
 *.tsbuildinfo
 *.log
